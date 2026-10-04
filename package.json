@@ -1,0 +1,261 @@
+{
+  "name": "import-sorter",
+  "displayName": "Import Sorter (isort for TS/JS)",
+  "description": "Sorts and groups imports in TypeScript/JavaScript files like Python's isort: Node built-ins, installed packages, then your own files.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Formatters",
+    "Other"
+  ],
+  "keywords": [
+    "import",
+    "sort",
+    "isort",
+    "organize imports",
+    "typescript",
+    "javascript"
+  ],
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact",
+    "onLanguage:vue",
+    "onLanguage:svelte"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "importSorter.sortImports",
+        "title": "Sort Imports",
+        "category": "Import Sorter"
+      },
+      {
+        "command": "importSorter.sortImportsInFolder",
+        "title": "Sort Imports in Folder",
+        "category": "Import Sorter"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "importSorter.sortImports",
+        "key": "shift+alt+s",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|vue|svelte)$/"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "importSorter.sortImports",
+          "group": "1_modification",
+          "when": "!editorReadonly && editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|vue|svelte)$/"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "importSorter.sortImportsInFolder",
+          "group": "7_modification",
+          "when": "explorerResourceIsFolder"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "importSorter.sortImports",
+          "when": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|vue|svelte)$/"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Import Sorter",
+      "properties": {
+        "importSorter.sortOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Sort imports automatically when a file is saved."
+        },
+        "importSorter.groups": {
+          "type": "array",
+          "description": "Order of import groups. An entry can be a single group or an array of groups that share one section. Groups: sideEffect, builtin, external, internal, parent, sibling, index, relative (= parent + sibling + index), style, type.",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sideEffect",
+                  "builtin",
+                  "external",
+                  "internal",
+                  "parent",
+                  "sibling",
+                  "index",
+                  "relative",
+                  "style",
+                  "type"
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "sideEffect",
+                    "builtin",
+                    "external",
+                    "internal",
+                    "parent",
+                    "sibling",
+                    "index",
+                    "relative",
+                    "style",
+                    "type"
+                  ]
+                }
+              }
+            ]
+          },
+          "default": [
+            "sideEffect",
+            "builtin",
+            "external",
+            "internal",
+            "relative",
+            "style"
+          ]
+        },
+        "importSorter.internalPatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "@/",
+            "~/",
+            "#"
+          ],
+          "markdownDescription": "Module prefixes treated as your own code (the `internal` group), e.g. `@/`, `~/`, `@myorg/`. Wrap in slashes for a regex, e.g. `/^@(app|lib)\\//`. Aliases from `tsconfig.json`/`jsconfig.json` `paths` and `baseUrl` are detected automatically."
+        },
+        "importSorter.detectTsconfigPaths": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Read `paths` and `baseUrl` from the nearest `tsconfig.json`/`jsconfig.json` to detect internal aliases."
+        },
+        "importSorter.groupHeadings": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "Optional comment written above each group (like isort's `import_heading_*`). Example: `{ \"builtin\": \"Node\", \"external\": \"Third party\", \"internal\": \"Project\" }`.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "importSorter.blankLinesBetweenGroups": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0,
+          "maximum": 3,
+          "description": "Number of blank lines between import groups."
+        },
+        "importSorter.sortSpecifiers": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sort named imports inside braces: import { a, b, c } from 'x'."
+        },
+        "importSorter.mergeDuplicates": {
+          "type": "boolean",
+          "default": true,
+          "description": "Merge multiple imports from the same module into one statement."
+        },
+        "importSorter.removeUnused": {
+          "type": "boolean",
+          "default": false,
+          "description": "Remove imported names that are never referenced in the file. Side-effect imports are never removed."
+        },
+        "importSorter.sortSideEffects": {
+          "type": "boolean",
+          "default": false,
+          "description": "Sort side-effect imports (import 'x'). Off by default because their order can matter (polyfills, CSS)."
+        },
+        "importSorter.caseSensitive": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use case-sensitive ordering."
+        },
+        "importSorter.maxLineLength": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "description": "Wrap named imports onto multiple lines when a statement is longer than this. 0 disables wrapping."
+        },
+        "importSorter.quoteStyle": {
+          "type": "string",
+          "enum": [
+            "preserve",
+            "single",
+            "double"
+          ],
+          "default": "preserve",
+          "description": "Quote style for module paths."
+        },
+        "importSorter.semicolons": {
+          "type": "string",
+          "enum": [
+            "preserve",
+            "always",
+            "never"
+          ],
+          "default": "preserve",
+          "description": "Whether import statements end with a semicolon. 'preserve' follows what the file already does."
+        },
+        "importSorter.trailingComma": {
+          "type": "boolean",
+          "default": true,
+          "description": "Add a trailing comma after the last specifier in wrapped (multi-line) imports."
+        },
+        "importSorter.bracketSpacing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Print spaces inside braces: { a } instead of {a}."
+        },
+        "importSorter.styleExtensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".css",
+            ".scss",
+            ".sass",
+            ".less",
+            ".styl",
+            ".pcss"
+          ],
+          "description": "Side-effect imports ending in these extensions go into the 'style' group."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "npm run check-types && node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "tsc": "node node_modules/typescript/bin/tsc",
+    "check-types": "npm run tsc -- --noEmit",
+    "package": "npm run check-types && node esbuild.mjs --production",
+    "vscode:prepublish": "npm run package",
+    "test": "npm run tsc -- -p tsconfig.json --outDir out && node --test \"out/test/**/*.test.js\"",
+    "vsix": "vsce package --no-dependencies --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^7.0.2",
+    "typescript-api": "npm:typescript@^6.0.3"
+  },
+  "//": "typescript@7 (native, Go) is the compiler for this project. It has no in-process parser API, so the sorter parses with 'typescript-api' (TypeScript 6, the last JS release), bundled into dist/."
+}
